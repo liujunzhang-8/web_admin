@@ -10,12 +10,12 @@ import 'babel-polyfill';
 import md5 from 'js-md5';
 import { Loading, Message } from 'element-ui'
 import echarts from 'echarts'
+import mock from './mock'
 
 // 配置请求的根路径
-// axios.defaults.baseURL = 'http://172.18.200.65:8088/message-plat'
-axios.defaults.baseURL = 'http://172.29.240.8:8088/message-plat'
+axios.defaults.baseURL = 'http://172.18.200.65:8088/message-plat'
+// axios.defaults.baseURL = 'http://172.29.240.8:8088/message-plat'
 // axios.defaults.baseURL = 'http://172.17.101.215:8088/message-plat'
-// axios.defaults.baseURL = 'http://172.17.101.3:8088/message-plat' 
 Vue.prototype.$http = axios;
 Vue.prototype.$md5 = md5;
 Vue.prototype.$echarts = echarts
