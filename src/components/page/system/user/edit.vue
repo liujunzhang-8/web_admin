@@ -1,44 +1,40 @@
 <template>
     <div>
-        <el-card>
-            <!-- 搜索与添加区域 -->
-            <Search></Search>
-            <el-button
-                type="primary"
-                icon="el-icon-circle-plus-outline"
-                size="mini"
-                @click="userRoles(),companyInfo(),addDialogVisible = true"
-            >添加</el-button>
-            <!-- 用户列表区域 -->
-            <Table></Table>
-            <!-- 分页 -->
-            <Page></Page>
-        </el-card>
-        <!-- 添加对话框 -->
+        <el-button
+            type="text"
+            icon="el-icon-edit"
+            @click="userRole(scope.row),userRoles(),companyInfo(),editUserInfo(scope.$index, scope.row)"
+        >编辑</el-button>
+
+        <!-- 编辑对话框 -->
         <el-dialog
-            title="添加用户"
-            :visible.sync="addDialogVisible"
-            @close="addDialogClosed()"
+            title="编辑用户"
+            :visible.sync="editDialogVisible"
             width="40%"
+            @close="editDialogClosed"
         >
             <div class="dialogDiv">
-                <!-- 内容主体区域 -->
-                <el-form :model="addForm" :rules="addFormRules" ref="addFormRef" label-width="80px">
-                    <el-form-item label="用户名" prop="userName">
-                        <el-input v-model="addForm.userName"></el-input>
+                <el-form
+                    :rules="editFormRules"
+                    ref="editFormRef"
+                    :model="editForm"
+                    label-width="80px"
+                >
+                    <el-form-item label="用户名">
+                        <el-input v-model="editForm.userName" disabled></el-input>
                     </el-form-item>
-                    <el-form-item label="真实姓名" prop="userRealName">
-                        <el-input v-model="addForm.userRealName"></el-input>
+                    <el-form-item label="真实姓名">
+                        <el-input v-model="editForm.userRealName"></el-input>
                     </el-form-item>
                     <el-form-item label="手机号码" prop="userPhone">
-                        <el-input v-model="addForm.userPhone"></el-input>
+                        <el-input v-model="editForm.userPhone"></el-input>
                     </el-form-item>
                     <el-form-item label="电子邮箱" prop="userEmail">
-                        <el-input v-model="addForm.userEmail"></el-input>
+                        <el-input v-model="editForm.userEmail"></el-input>
                     </el-form-item>
-                    <el-form-item label="用户角色" prop="roles">
+                    <el-form-item label="用户角色">
                         <template>
-                            <el-checkbox-group v-model="addForm.roles" value-key="roleId">
+                            <el-checkbox-group v-model="currRoleIds">
                                 <el-checkbox
                                     v-for="role in roleData"
                                     :label="role.roleId"
@@ -47,9 +43,9 @@
                             </el-checkbox-group>
                         </template>
                     </el-form-item>
-                    <el-form-item label="分公司" prop="companyId">
+                    <el-form-item label="分公司">
                         <el-select
-                            v-model="addForm.companyId"
+                            v-model="editForm.companyId"
                             placeholder="请选择"
                             value-key="companynum"
                         >
@@ -61,24 +57,20 @@
                             ></el-option>
                         </el-select>
                     </el-form-item>
-                    <el-form-item label="用户描述" prop="userSummary">
-                        <el-input rows="5" v-model="addForm.userSummary"></el-input>
+                    <el-form-item label="用户描述">
+                        <el-input v-model="editForm.userSummary"></el-input>
                     </el-form-item>
                 </el-form>
             </div>
-            <!-- 底部区域 -->
             <span slot="footer" class="dialog-footer">
-                <el-button @click="addDialogVisible = false">取 消</el-button>
-                <el-button type="primary" @click="addUser()">提 交</el-button>
+                <el-button type="primary" @click="editUser()">确 定</el-button>
+                <el-button @click="editDialogVisible = false">取 消</el-button>
             </span>
         </el-dialog>
     </div>
 </template>
 
 <script>
-import Search from './user/search'
-import Table from './user/table'
-import Page from './user/page'
 export default {
     data() {
         // 验证邮箱的规则
@@ -111,50 +103,41 @@ export default {
             roleData: [],
             // 分公司
             companyId: [],
-            // 添加用户
-            addForm: {
+            // 编辑用户
+            editForm: {
                 userName: '',
                 userRealName: '',
                 userPhone: '',
                 userEmail: '',
                 roles: [],
-                companyId: [],
+                companyId: '',
                 userSummary: ''
             },
-            // 添加对话框的显示与隐藏
-            addDialogVisible: false,
-            // 添加表单的验证规则对象
-            addFormRules: {
-                userName: [
-                    { required: true, message: '请输入用户名', trigger: 'blur' },
-                    {
-                        min: 0,
-                        max: 10,
-                        message: '用户名的长度在~10个字符之间',
-                        trigger: 'blur'
-                    }
-                ],
-                userRealName: [
-                    { required: true, message: '请输入真实姓名', trigger: 'blur' },
-                    {
-                        min: 0,
-                        max: 10,
-                        message: '真实姓名的长度在3~10个字符之间',
-                        trigger: 'blur'
-                    }
+            // 编辑对话框的显示与隐藏
+            editDialogVisible: false,
+            // 编辑表单的验证规则对象
+            editFormRules: {
+                userPhone: [
+                    { required: true, message: '请输入用户手机', trigger: 'blur' },
+                    { validator: checkMobile, trigger: 'blur' }
                 ],
                 userEmail: [
-                    { required: true, message: '请输入邮箱', trigger: 'blur' },
+                    { required: true, message: '请输入用户邮箱', trigger: 'blur' },
                     { validator: checkEmail, trigger: 'blur' }
-                ],
-                userPhone: [
-                    { required: true, message: '请输入手机号', trigger: 'blur' },
-                    { validator: checkMobile, trigger: 'blur' }
                 ]
-            },
+            }
         };
     },
     methods: {
+        // 打开编辑
+        async editUserInfo(index, row) {
+            const { data: res } = this.$http.get('/user/info/' + row.userId);
+            this.editForm = row;
+            let that = this;
+            setTimeout(function() {
+                that.editDialogVisible = true;
+            }, 1200);
+        },
         // 获取用户角色
         async userRoles() {
             const { data: res } = await this.$http.post('/role/getAllRoles', {
@@ -188,53 +171,32 @@ export default {
                 // console.log(res.data[5].companynum);
             }
         },
-        // 添加新用户
-        addUser() {
-            this.$refs.addFormRef.validate(async valid => {
+        // 编辑用户
+        editUser() {
+            this.editForm.roles = this.currRoleIds;
+            this.$refs.editFormRef.validate(async valid => {
                 console.log(valid);
                 if (!valid) {
                     return;
                 } else {
-                    // 可以发起添加用户的网络请求
-                    const { data: res } = await this.$http.post('/user/add', this.addForm);
-                    // console.log(res.data)
+                    // 可以发起编辑用户的网络请求
+                    const { data: res } = await this.$http.post('/user/change', this.editForm);
                     if (res.code !== '0000') {
-                        this.$message.error('添加用户失败');
+                        this.$message.error('编辑用户失败');
                     } else {
-                        this.$message.success('添加用户成功！');
+                        this.$message.success('编辑用户成功！');
                         // 隐藏添加用户的对话框
-                        this.addDialogVisible = false;
+                        this.editDialogVisible = false;
                         // 重新获取用户列表数据
                         this.getUserList();
                     }
                 }
             });
         },
-        // 监听添加用户对话框的关闭事件
-        addDialogClosed() {
-            this.$refs.addFormRef.resetFields();
-        },
-    },
-    components: {
-        Search,
-        Table,
-        Page,
+        // 监听编辑用户对话框的关闭事件
+        editDialogClosed() {
+            this.$refs.editFormRef.resetFields();
+        }
     }
 };
 </script>
-
-<style scoped>
-span {
-    color: #606266;
-    font-size: 14px;
-    padding-right: 10px;
-}
-.el-input {
-    width: 216px;
-    display: inline-block;
-}
-.dialogDiv {
-    height: 300px;
-    overflow: auto;
-}
-</style>
